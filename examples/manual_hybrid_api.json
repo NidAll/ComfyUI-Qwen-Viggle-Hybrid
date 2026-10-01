@@ -1,0 +1,88 @@
+{
+  "1": {
+    "class_type": "UNETLoader",
+    "inputs": {
+      "unet_name": "qwen_image_2.1_int8_convrot.safetensors",
+      "weight_dtype": "default"
+    }
+  },
+  "2": {
+    "class_type": "CLIPLoader",
+    "inputs": {
+      "clip_name": "qwen3vl_8b_w4a8.safetensors",
+      "type": "qwen_image",
+      "device": "default"
+    }
+  },
+  "3": {
+    "class_type": "VAELoader",
+    "inputs": { "vae_name": "qwen_image_2.1_vae_bf16.safetensors" }
+  },
+  "4": {
+    "class_type": "TextEncodeQwenImage21",
+    "inputs": {
+      "clip": ["2", 0],
+      "prompt": "A red ceramic teapot on a wooden table, soft daylight.",
+      "negative_prompt": "",
+      "resolution": 1024
+    }
+  },
+  "5": {
+    "class_type": "ViggleTurboLora",
+    "inputs": {
+      "model": ["1", 0],
+      "lora_name": "Qwen-Image-2.1-viggle-turbo-v0.3-6step-lora-r128.safetensors",
+      "strength": 1.0
+    }
+  },
+  "6": {
+    "class_type": "ViggleTurboSigmas",
+    "inputs": {
+      "latent": ["4", 2],
+      "nodes": "1.0, 0.9583, 0.9167, 0.875, 0.75, 0.5, 0.25, 0.16666666666666666, 0.08333333333333333"
+    }
+  },
+  "7": {
+    "class_type": "SplitSigmas",
+    "inputs": { "sigmas": ["6", 0], "step": 7 }
+  },
+  "8": {
+    "class_type": "BasicGuider",
+    "inputs": { "model": ["5", 0], "conditioning": ["4", 0] }
+  },
+  "9": {
+    "class_type": "BasicGuider",
+    "inputs": { "model": ["1", 0], "conditioning": ["4", 0] }
+  },
+  "10": { "class_type": "RandomNoise", "inputs": { "noise_seed": 12345 } },
+  "11": { "class_type": "DisableNoise", "inputs": {} },
+  "12": { "class_type": "KSamplerSelect", "inputs": { "sampler_name": "euler" } },
+  "13": {
+    "class_type": "SamplerCustomAdvanced",
+    "inputs": {
+      "noise": ["10", 0],
+      "guider": ["8", 0],
+      "sampler": ["12", 0],
+      "sigmas": ["7", 0],
+      "latent_image": ["4", 2]
+    }
+  },
+  "14": {
+    "class_type": "SamplerCustomAdvanced",
+    "inputs": {
+      "noise": ["11", 0],
+      "guider": ["9", 0],
+      "sampler": ["12", 0],
+      "sigmas": ["7", 1],
+      "latent_image": ["13", 0]
+    }
+  },
+  "15": {
+    "class_type": "VAEDecode",
+    "inputs": { "samples": ["14", 0], "vae": ["3", 0] }
+  },
+  "16": {
+    "class_type": "SaveImage",
+    "inputs": { "images": ["15", 0], "filename_prefix": "QwenViggleManual" }
+  }
+}
